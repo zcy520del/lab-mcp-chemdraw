@@ -1,0 +1,33 @@
+{
+  "name": "@zcy520del/lab-mcp-chemdraw",
+  "description": "Build chemical structures in ChemDraw via COM: arbitrary atoms/bonds or quick benzene derivatives, export PNG/CDXML/MOL. DSH plugin wrapping a stdio MCP server.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "server",
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {},
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "mcp",
+    "com",
+    "automation",
+    "chemdraw"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zcy520del/lab-mcp-chemdraw.git"
+  },
+  "homepage": "https://github.com/zcy520del/lab-mcp-chemdraw#readme"
+}
