@@ -1,17 +1,12 @@
-r"""ChemDraw 自动化公共模块：连接 + 原子/键封装 + 文件导出（经验固化版）。
+r"""ChemDraw automation helper (Windows COM; self-contained release copy).
 
-本机: ChemDraw 2023，ProgID ChemDraw_x64.Application，类型库 ChemDrawBase.dll → .pip-tmp\chemdraw2023.py。
-
-已验证语义（务必遵守）:
-- MakeAtom() 无参，默认落在 (0,0)！Position 返回 IChemDrawPoint **副本**——必须显式回写：
-      p = a.Position; p.X = x; p.Y = y; a.Position = p
-- 元素用 atom.ElementNumber（C=6, O=8, N=7...）。杂原子自动氢计数有 bug（OH 会显示成 OH2），
-  含 H 的杂原子标签一律显式设：a.LabelText = "OH" / "NH2" 等。
-- MakeBond(a1, a2) 只收两原子；键级 bond.BondOrder = 1/2/3。
-- SaveAs(path[, fmt, dpi])：格式由扩展名驱动（.cdxml/.mol/.png），fmt 传 0 即可，dpi 可给 300。
-- Open 回来的文档同样走 IChemDrawDocument 类型化包装。
-
-批量画图推荐路线: SMILES → RDKit 生成 .mol（V2000）→ cd.Open + SaveAs(.png/.cdxml)。
+Verified on ChemDraw 2023 x64 (ProgID ChemDraw_x64.Application):
+- MakeAtom() takes no args and lands at (0,0); Position returns a COPY --
+  mutate it, then write back: p = a.Position; p.X/p.Y = ...; a.Position = p.
+- Heteroatom auto-H labels are buggy (O renders as OH2): set a.LabelText
+  explicitly ('OH', 'NO2', ...) instead of relying on ElementNumber.
+- SaveAs(path[, fmt, dpi]): format driven by extension (.cdxml/.mol/.png ok).
+- Typed makepy wrapper chemdraw2023.py is required for VARIANT-safe calls.
 """
 import os
 import sys
@@ -30,7 +25,7 @@ ELEMENTS = {"H": 1, "C": 6, "N": 7, "O": 8, "F": 9, "S": 16, "Cl": 17, "Br": 35,
 
 
 def connect(visible=True):
-    """附着或冷启动 ChemDraw，返回类型化 (IChemDrawApplication)。"""
+    """Attach to or cold-start ChemDraw; returns typed IChemDrawApplication."""
     app = wc.Dispatch("ChemDraw_x64.Application")
     if visible:
         try:
@@ -56,11 +51,11 @@ def open_document(atyp, path):
 
 def atom(dt, x, y, elem="C", label=None):
     a = dt.MakeAtom()
-    p = a.Position          # 副本！改完必须回写
+    p = a.Position          # Position returns a copy; write back below
     p.X = float(x)
     p.Y = float(y)
     a.Position = p
-    if label:               # 杂原子含 H 时用显式标签绕开自动氢计数 bug
+    if label:               # explicit label bypasses auto-H bug
         a.LabelText = label
     else:
         a.ElementNumber = ELEMENTS[elem] if isinstance(elem, str) else elem
@@ -74,7 +69,7 @@ def bond(dt, a1, a2, order=1):
 
 
 def benzene(dt, cx=150.0, cy=150.0, r=40.0):
-    """画苯环（凯库勒式单双键交替），返回 6 个原子。"""
+    """Build a Kekule benzene ring (alternating single/double); returns 6 atoms."""
     import math
     atoms = [atom(dt, cx + r * math.cos(math.radians(60 * i - 90)),
                   cy + r * math.sin(math.radians(60 * i - 90))) for i in range(6)]
@@ -84,7 +79,7 @@ def benzene(dt, cx=150.0, cy=150.0, r=40.0):
 
 
 def save(dt, path, dpi=None):
-    """按扩展名导出（.cdxml/.mol/.png 均验证过）。"""
+    """Export by extension (.cdxml/.mol/.png all verified)."""
     if dpi:
         dt.SaveAs(path, 0, dpi)
     else:
